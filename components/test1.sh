@@ -6,4 +6,4 @@ sudo systemctl start nginx
 sudo systemctl start docker
 sudo systemctl enable nginx
 sudo systemctl enable docker
-echo "<h1>Nginx and Docker have been installed and started successfully on server 1</h1>" > /usr/share/nginx/html/index.html
+echo "<h1>Nginx and Docker have been installed and started successfully on Amazon Linux Instance</h1>" > /usr/share/nginx/html/index.html
