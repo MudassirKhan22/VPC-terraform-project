@@ -11,10 +11,3 @@ resource "aws_s3_bucket_versioning" "new_bucket_versioning" {
     status = "Enabled"
   }
 }
-
-# resource "aws_s3_bucket" "new_bucket" {
-#     bucket = "mudassir-bucket-name-12345"
-#     tags = {
-#       Name = "New S3 Bucket"
-#     }
-# }
