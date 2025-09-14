@@ -1,3 +1,9 @@
+<img width="3840" height="2367" alt="Untitled diagram _ Mermaid Chart-2025-09-14-175512" src="https://github.com/user-attachments/assets/c097fdab-1557-4ae7-be63-04f36ab85032" />
+
+
+
+
+
 # AWS Infrastructure with Terraform
 
 ## 🚀 Project Overview
