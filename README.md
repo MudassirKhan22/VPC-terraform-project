@@ -1,254 +1,365 @@
-<img width="3840" height="2367" alt="Untitled diagram _ Mermaid Chart-2025-09-14-175512" src="https://github.com/user-attachments/assets/c097fdab-1557-4ae7-be63-04f36ab85032" />
+<img width="3840" height="1695" alt="Untitled diagram _ Mermaid Chart-2025-09-14-184338" src="https://github.com/user-attachments/assets/fb23d3db-705a-4655-b035-0d83a7786aa3" />
 
 
+# 🚀 AWS Infrastructure with Terraform - Complete 3-Tier Architecture
 
+A comprehensive AWS infrastructure project built with Terraform, featuring a complete 3-tier architecture with web servers, load balancer, and RDS database in private subnets.
 
+## 📋 Table of Contents
 
-# AWS Infrastructure with Terraform
+- [Project Overview](#project-overview)
+- [Architecture](#architecture)
+- [Infrastructure Components](#infrastructure-components)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+- [Key Features](#key-features)
+- [Important Notes](#important-notes)
+- [Git Setup](#git-setup)
+- [Architecture Diagram](#architecture-diagram)
+- [Usage](#usage)
+- [Monitoring and Management](#monitoring-and-management)
+- [Cleanup](#cleanup)
+- [Troubleshooting](#troubleshooting)
 
-## 🚀 Project Overview
+## 🎯 Project Overview
 
-This project demonstrates a complete AWS infrastructure setup using Terraform with a modular approach. It creates a highly available, scalable web application infrastructure in the AWS `ap-south-1` (Mumbai) region.
+This project demonstrates a production-ready AWS infrastructure using Terraform, implementing a complete 3-tier architecture with:
 
-## 📋 Infrastructure Components
+- **Web Tier**: EC2 instances behind an Application Load Balancer
+- **Application Tier**: Load balancer with health checks and target groups
+- **Database Tier**: RDS MySQL database in private subnets
+- **Networking**: VPC with public and private subnets, NAT Gateway, and security groups
 
-### 🏗️ **Core Infrastructure**
-- **VPC (Virtual Private Cloud)** - Custom network with CIDR `10.0.0.0/16`
-- **2 Public Subnets** - Multi-AZ deployment across `ap-south-1a` and `ap-south-1b`
-- **Internet Gateway** - Enables internet access for public subnets
-- **Route Tables** - Routes traffic to internet gateway
-- **Network ACLs** - Additional security layer for subnets
+## 🏗️ Architecture
 
-### 🔒 **Security**
-- **Security Groups** - Controls inbound/outbound traffic
-  - SSH access (port 22) from anywhere
-  - HTTP access (port 80) from anywhere
-  - All outbound traffic allowed
-- **Key Pairs** - SSH access to EC2 instances
+### High-Level Architecture
+```
+Internet → ALB → EC2 Instances (Public Subnets)
+                    ↓
+              RDS Database (Private Subnets)
+                    ↓
+              NAT Gateway (for outbound access)
+```
 
-### 💻 **Compute Resources**
-- **2 EC2 Instances** with different configurations:
-  - **Amazon Linux Instance** (`t2.micro`)
-    - AMI: `ami-0b982602dbb32c5bd`
-    - Volume: 8GB GP2
-    - User Data: Installs Nginx and Docker
-  - **Ubuntu Instance** (`t2.small`)
-    - AMI: `ami-02d26659fd82cf299`
-    - Volume: 12GB GP3
-    - User Data: Installs Nginx and Docker
+### Network Design
+- **VPC**: 10.0.0.0/16
+- **Public Subnets**: 10.0.1.0/24, 10.0.2.0/24 (for web servers)
+- **Private Subnets**: 10.0.10.0/24, 10.0.20.0/24 (for RDS database)
+- **Multi-AZ**: Deployed across ap-south-1a and ap-south-1b
 
-### ⚖️ **Load Balancing**
-- **Application Load Balancer** - Distributes traffic across instances
-- **Target Group** - Health checks and instance management
-- **Listener** - HTTP traffic on port 80
+## 🛠️ Infrastructure Components
 
-### 🗄️ **Storage**
-- **S3 Bucket** - Object storage with versioning enabled
-- **EBS Volumes** - Persistent storage for EC2 instances
+### **Networking (VPC)**
+- ✅ VPC with DNS support
+- ✅ 2 Public Subnets (for web servers)
+- ✅ 2 Private Subnets (for RDS database)
+- ✅ Internet Gateway (for public access)
+- ✅ NAT Gateway (for private subnet outbound access)
+- ✅ Route Tables (public and private)
+- ✅ Network ACLs
+
+### **Compute (EC2)**
+- ✅ 2 EC2 Instances:
+  - Amazon Linux 2 (t2.micro)
+  - Ubuntu 20.04 (t2.small)
+- ✅ Key Pair for SSH access
+- ✅ Security Groups (SSH:22, HTTP:80)
+- ✅ EBS Volumes (8GB gp2, 12GB gp3)
+- ✅ User Data Scripts (Nginx + Docker installation)
+
+### **Load Balancing**
+- ✅ Application Load Balancer
+- ✅ Target Group with Health Checks
+- ✅ Load Balancer Listener (HTTP:80)
+
+### **Database (RDS)**
+- ✅ MySQL 8.0 Database (db.t3.micro)
+- ✅ RDS Subnet Group (Multi-AZ)
+- ✅ RDS Security Group (MySQL:3306)
+- ✅ Automated Backups (7 days retention)
+- ✅ Storage Encryption enabled
+- ✅ Private subnet deployment
+
+### **Storage**
+- ✅ S3 Bucket with Versioning
+- ✅ EBS Volumes for EC2 instances
+
+### **Security**
+- ✅ Security Groups (Web and RDS)
+- ✅ Network ACLs
+- ✅ Private database access only
+- ✅ Encrypted storage
 
 ## 📁 Project Structure
 
 ```
 Terraform-projects/
-├── main.tf                    # Main configuration calling the module
+├── main.tf                    # Root module configuration
 ├── provider.tf               # AWS provider configuration
-├── terraform.tf              # Terraform version requirements
-├── terraform.tfstate         # Terraform state file
-├── terraform.tfstate.backup  # Backup state file
-└── components/               # Module directory
-    ├── vpc.tf               # VPC, subnets, IGW, route tables, NACL
-    ├── ec2.tf               # EC2 instances, security groups, key pairs
-    ├── elb.tf               # Load balancer, target group, listener
-    ├── s3.tf                # S3 bucket and versioning
-    ├── output.tf            # Output values
-    ├── variable.tf          # Variable definitions
-    ├── project              # Private SSH key
-    ├── project.pub          # Public SSH key
-    ├── test1.sh             # User data script for Amazon Linux
-    └── test2.sh             # User data script for Ubuntu
+├── terraform.tf              # Terraform settings
+├── components/               # Terraform module
+│   ├── vpc.tf               # VPC, subnets, IGW, NAT Gateway
+│   ├── ec2.tf               # EC2 instances and security groups
+│   ├── elb.tf               # Load balancer and target groups
+│   ├── rds.tf               # RDS database and security groups
+│   ├── s3.tf                # S3 bucket configuration
+│   ├── variable.tf          # Input variables
+│   └── output.tf            # Output values
+├── architecture-with-rds.mmd # Architecture diagram (Mermaid)
+├── linkedin-post.md         # LinkedIn post options
+├── .gitignore              # Git ignore file
+└── README.md               # This file
 ```
 
-## 🛠️ **Technologies Used**
+## 🔧 Prerequisites
 
-- **Terraform** - Infrastructure as Code
-- **AWS Provider** - Terraform AWS provider v6.11.0
-- **Bash Scripting** - User data scripts for instance configuration
-- **Nginx** - Web server
-- **Docker** - Containerization platform
+- **Terraform** (>= 1.0)
+- **AWS CLI** configured with appropriate credentials
+- **Git** for version control
+- **AWS Account** with appropriate permissions
 
-## 🚀 **Getting Started**
+### Required AWS Permissions
+- EC2 (instances, security groups, key pairs, VPC)
+- RDS (database instances, subnet groups, parameter groups)
+- ELB (load balancers, target groups)
+- S3 (bucket creation and management)
+- IAM (if using roles)
 
-### Prerequisites
+## 🚀 Getting Started
 
-1. **AWS CLI** configured with appropriate credentials
-2. **Terraform** installed (version 1.0+)
-3. **Git** for version control
-4. **SSH Key Pair** (already included in the project)
-
-### Git Setup (Important!)
-
-Before starting, ensure you have a proper `.gitignore` file:
-
+### 1. Clone the Repository
 ```bash
-# The .gitignore file is already included in this project
-# It prevents committing sensitive files like:
-# - *.tfstate files (contain sensitive resource information)
-# - *.tfvars files (may contain secrets)
-# - .terraform/ directory (local cache)
+git clone <your-repo-url>
+cd Terraform-projects
 ```
 
-**Never commit these files to version control:**
-- `terraform.tfstate`
-- `terraform.tfstate.backup`
-- `*.tfvars` files
-- `.terraform/` directory
+### 2. Configure AWS Credentials
+```bash
+aws configure
+# Enter your Access Key ID, Secret Access Key, and region (ap-south-1)
+```
 
-### Installation Steps
+### 3. Initialize Terraform
+```bash
+terraform init
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Terraform-projects
-   ```
+### 4. Review the Plan
+```bash
+terraform plan
+```
 
-2. **Initialize Terraform**
-   ```bash
-   terraform init
-   ```
+### 5. Deploy the Infrastructure
+```bash
+terraform apply
+```
 
-3. **Review the plan**
-   ```bash
-   terraform plan
-   ```
+### 6. Access Your Infrastructure
+```bash
+# Get load balancer DNS name
+terraform output load_balancer_dns
 
-4. **Apply the configuration**
-   ```bash
-   terraform apply
-   ```
+# Get RDS endpoint
+terraform output rds_endpoint
+```
 
-5. **Access your infrastructure**
-   - Get the load balancer DNS name from outputs
-   - SSH to instances using the provided key pair
-
-## 🔧 **Configuration Details**
-
-### **VPC Configuration**
-- **CIDR Block**: `10.0.0.0/16`
-- **Subnets**: 
-  - `10.0.1.0/24` in `ap-south-1a`
-  - `10.0.2.0/24` in `ap-south-1b`
-- **Availability Zones**: `ap-south-1a`, `ap-south-1b`
-
-### **EC2 Instance Configuration**
-- **Amazon Linux**: `t2.micro` with 8GB GP2 storage
-- **Ubuntu**: `t2.small` with 12GB GP3 storage
-- **Auto-assign Public IP**: Enabled
-- **User Data**: Automated installation of Nginx and Docker
-
-### **Load Balancer Configuration**
-- **Type**: Application Load Balancer
-- **Scheme**: Internet-facing
-- **Health Check**: HTTP on port 80, path `/`
-- **Target Group**: HTTP protocol on port 80
-
-### **Security Configuration**
-- **Security Group Rules**:
-  - Inbound: SSH (22), HTTP (80)
-  - Outbound: All traffic
-- **Network ACL**: Allow all traffic (permissive for demo)
-
-## 📊 **Outputs**
-
-The infrastructure provides the following outputs:
-- **VPC ID** - Virtual Private Cloud identifier
-- **Instance Private DNS** - Private DNS names of EC2 instances
-- **S3 Bucket Name** - Name of the created S3 bucket
-- **Security Group ID** - Security group identifier
-- **Security Group Name** - Security group name
-
-## 🔍 **Key Features**
-
-### **Modular Design**
-- Clean separation of concerns
-- Reusable components
-- Easy maintenance and updates
+## ✨ Key Features
 
 ### **High Availability**
-- Multi-AZ deployment
-- Load balancer for traffic distribution
-- Health checks and auto-recovery
+- Multi-AZ deployment across 2 availability zones
+- Load balancer with health checks
+- RDS database with automated backups
 
-### **Security Best Practices**
-- VPC isolation
-- Security groups for access control
-- SSH key-based authentication
-- Network ACLs for additional security
+### **Security**
+- Database isolated in private subnets
+- Security groups with least privilege access
+- Network ACLs for additional security layer
+- Encrypted storage and database
+
+### **Scalability**
+- Load balancer distributes traffic
+- Auto-scaling ready architecture
+- Modular Terraform design for easy scaling
 
 ### **Automation**
-- Infrastructure as Code
+- Infrastructure as Code with Terraform
 - Automated instance configuration
-- User data scripts for software installation
+- Automated software installation
 
-## 🚨 **Important Notes**
+### **Monitoring**
+- Load balancer health checks
+- RDS monitoring and logging
+- CloudWatch integration ready
 
-1. **Cost Management**: This setup creates billable AWS resources. Remember to destroy when not needed.
+## ⚠️ Important Notes
 
-2. **Security**: The current configuration is set up for demonstration purposes. For production:
-   - Restrict SSH access to specific IP ranges
-   - Use more restrictive security group rules
-   - Enable VPC Flow Logs for monitoring
+### **State Management**
+- **NEVER commit `.tfstate` files to version control**
+- State files contain sensitive information
+- Use remote state storage for team collaboration
+- Consider using Terraform Cloud or S3 backend
 
-3. **AMI Updates**: AMI IDs may become outdated. Update them regularly for security patches.
+### **Cost Management**
+- This infrastructure uses free tier eligible resources
+- Monitor your AWS bill regularly
+- Use `terraform destroy` to clean up resources
 
-4. **State Management**: Consider using remote state storage (S3 + DynamoDB) for team collaboration.
+### **Security Considerations**
+- Change default passwords
+- Use IAM roles instead of access keys when possible
+- Enable MFA for AWS accounts
+- Regular security updates
 
-5. **⚠️ State Files**: **NEVER commit Terraform state files to version control!**
-   - State files contain sensitive information (resource IDs, sometimes secrets)
-   - Use `.gitignore` to exclude `*.tfstate*` files
-   - For team collaboration, use remote state storage (S3 + DynamoDB)
-   - State files are local to your machine and should remain local
+## 🔐 Git Setup
 
-## 🧹 **Cleanup**
+### Create .gitignore
+```bash
+# Terraform
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
 
-To destroy all resources:
+# AWS
+.aws/
+
+# Keys
+project*
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+```
+
+### Initialize Git Repository
+```bash
+git init
+git add .
+git commit -m "Initial commit: AWS Infrastructure with Terraform"
+git branch -M main
+git remote add origin <your-repo-url>
+git push -u origin main
+```
+
+## 📊 Architecture Diagram
+
+The project includes a Mermaid architecture diagram (`architecture-with-rds.mmd`) showing:
+
+- VPC with public and private subnets
+- Internet Gateway and NAT Gateway
+- Application Load Balancer
+- EC2 instances in public subnets
+- RDS database in private subnets
+- Security groups and network flow
+
+To view the diagram:
+1. Copy the content from `architecture-with-rds.mmd`
+2. Paste it into [Mermaid Live Editor](https://mermaid.live/)
+3. Or use any Mermaid-compatible viewer
+
+## 💻 Usage
+
+### Accessing Web Servers
+```bash
+# Get load balancer DNS
+terraform output load_balancer_dns
+
+# Access via browser
+http://<load-balancer-dns>
+```
+
+### Connecting to RDS Database
+```bash
+# Get RDS endpoint
+terraform output rds_endpoint
+
+# Connect from EC2 instance (in private subnet)
+mysql -h <rds-endpoint> -u admin -p
+```
+
+### SSH to EC2 Instances
+```bash
+# Get instance public IPs
+terraform output instance_public_ips
+
+# SSH to instances
+ssh -i project.pem ec2-user@<public-ip>  # Amazon Linux
+ssh -i project.pem ubuntu@<public-ip>    # Ubuntu
+```
+
+## 📈 Monitoring and Management
+
+### Check Infrastructure Status
+```bash
+# View all resources
+terraform state list
+
+# Check specific resource
+terraform state show aws_instance.new_ec2_instance
+
+# View outputs
+terraform output
+```
+
+### AWS Console
+- **EC2**: View instances and security groups
+- **RDS**: Monitor database performance
+- **ELB**: Check load balancer health
+- **VPC**: Review network configuration
+- **S3**: Manage bucket contents
+
+## 🧹 Cleanup
+
+### Destroy All Resources
 ```bash
 terraform destroy
 ```
 
-## 🔧 **Troubleshooting**
+### Verify Cleanup
+```bash
+# Check AWS console to ensure all resources are deleted
+# Verify no unexpected charges on your AWS bill
+```
+
+## 🔧 Troubleshooting
 
 ### Common Issues
 
-1. **AMI Not Found**: Update AMI IDs in `main.tf` if they become unavailable
-2. **Key Pair Issues**: Ensure the key pair exists in the target region
-3. **S3 Bucket Name Conflicts**: Change the bucket name in `main.tf` if it already exists
+1. **Terraform State Lock**
+   ```bash
+   terraform force-unlock <lock-id>
+   ```
 
-### Useful Commands
+2. **AWS Credentials**
+   ```bash
+   aws sts get-caller-identity
+   ```
 
-```bash
-# Check current state
-terraform state list
+3. **Resource Already Exists**
+   - Check AWS console for existing resources
+   - Import existing resources or use different names
 
-# View specific resource
-terraform state show <resource-address>
+4. **Permission Denied**
+   - Verify AWS IAM permissions
+   - Check security group rules
 
-# Import existing resource
-terraform import <resource-address> <resource-id>
+### Getting Help
+- Check Terraform documentation
+- Review AWS service documentation
+- Check project issues and discussions
 
-# Refresh state
-terraform refresh
-```
+## 📝 License
 
-## 📈 **Scaling Considerations**
+This project is for educational purposes. Please ensure you comply with AWS terms of service and your organization's policies.
 
-This infrastructure can be easily scaled by:
-- Adding more instances to the target group
-- Implementing Auto Scaling Groups
-- Adding more subnets across different AZs
-- Implementing RDS for database needs
-- Adding CloudFront for CDN
-
-## 🤝 **Contributing**
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -256,14 +367,15 @@ This infrastructure can be easily scaled by:
 4. Test thoroughly
 5. Submit a pull request
 
-## 📄 **License**
+## 📞 Support
 
-This project is for educational and demonstration purposes.
-
-## 📞 **Support**
-
-For issues and questions, please create an issue in the repository.
+For questions or issues:
+- Create an issue in the repository
+- Check the troubleshooting section
+- Review AWS and Terraform documentation
 
 ---
 
 **Happy Infrastructure Building! 🚀**
+
+*Built with ❤️ using Terraform and AWS*
